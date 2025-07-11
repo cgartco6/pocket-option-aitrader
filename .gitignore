@@ -1,0 +1,12 @@
+# .gitignore
+.env
+*.key
+*.pem
+data/
+_pycache_/
+*.pyc
+*.log
+*.pkl
+*.csv
+.DS_Store
+secrets/
