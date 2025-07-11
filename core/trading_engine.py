@@ -10,6 +10,60 @@ from .risk_manager import RiskManager
 from .telegram_bot import TelegramBot
 from config import settings
 import random
+import queue
+
+class TradingEngine:
+    # ... existing code ...
+    
+    def _init_(self, api):
+        # ... existing initialization ...
+        self.price_queue = queue.Queue()
+        self.api.start_websocket()
+        
+    def monitor_trade(self, trade_id, instrument_id, entry_price, direction):
+        """Real-time trade monitoring"""
+        start_time = datetime.now()
+        duration = settings.SETTINGS["TRADE_INTERVAL"]
+        exit_threshold = settings.SETTINGS["EARLY_EXIT_THRESHOLD"] * duration
+        
+        while (datetime.now() - start_time).seconds < duration:
+            # Get real-time price
+            current_price = self.api.get_last_price(instrument_id)
+            
+            # Calculate profit factor
+            if direction == 'BUY':
+                profit_factor = (current_price - entry_price) / entry_price
+            else:  # SELL
+                profit_factor = (entry_price - current_price) / entry_price
+            
+            # Check exit conditions
+            elapsed = (datetime.now() - start_time).seconds
+            if profit_factor < -0.003 and elapsed > exit_threshold:
+                return "early_loss", profit_factor
+                
+            time.sleep(0.5)  # High-frequency check
+        
+        # Final calculation
+        current_price = self.api.get_last_price(instrument_id)
+        if direction == 'BUY':
+            profit_factor = (current_price - entry_price) / entry_price
+        else:
+            profit_factor = (entry_price - current_price) / entry_price
+            
+        result = "win" if profit_factor > 0 else "loss"
+        return result, profit_factor
+        
+    def execute_trade(self, instrument, signal, confidence):
+        """Execute trade with real-time monitoring"""
+        # ... existing setup ...
+        
+        # Monitor trade with real-time prices
+        result, profit_factor = self.monitor_trade(
+            trade_id, 
+            instrument_id, 
+            entry_price, 
+            signal
+        )
 
 logger = logging.getLogger(_name_)
 
