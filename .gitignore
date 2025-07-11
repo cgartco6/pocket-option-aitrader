@@ -1,0 +1,34 @@
+# Environment files
+.env
+*.env
+secrets/
+
+# Python cache
+_pycache_/
+*.pyc
+*.pyo
+*.pyd
+
+# Data files
+data/
+*.pkl
+*.csv
+*.db
+*.log
+
+# Encryption keys
+*.key
+*.pem
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
