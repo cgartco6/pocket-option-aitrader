@@ -1,50 +1,46 @@
-import os
-from cryptography.fernet import Fernet
-import base64
 import logging
+import os
+from datetime import datetime
+from config import settings
 
-logger = logging.getLogger(_name_)
-
-class SecurityManager:
-    def _init_(self):
-        self.encryption_key = os.getenv('ENCRYPTION_KEY')
-        if not self.encryption_key:
-            logger.error("ENCRYPTION_KEY not set in environment")
-            raise ValueError("ENCRYPTION_KEY not set in environment")
-        
-        # Ensure key is 32 bytes URL-safe base64-encoded
-        key = base64.urlsafe_b64encode(self.encryption_key.encode()[:32].ljust(32, b'='))
-        self.cipher = Fernet(key)
-
-    def encrypt(self, data):
-        """Encrypt sensitive data"""
-        if isinstance(data, str):
-            data = data.encode()
-        return self.cipher.encrypt(data).decode()
-
-    def decrypt(self, encrypted_data):
-        """Decrypt sensitive data"""
-        try:
-            return self.cipher.decrypt(encrypted_data.encode()).decode()
-        except Exception as e:
-            logger.error(f"Decryption error: {str(e)}")
-            return ""
-
-    def load_encrypted_env(self):
-        """Load and decrypt environment variables"""
-        encrypted_vars = ['NEWS_API_KEY', 'POCKET_OPTION_KEY', 
-                         'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID']
-        
-        decrypted = {}
-        for var in encrypted_vars:
-            encrypted_val = os.getenv(var)
-            if encrypted_val:
-                try:
-                    decrypted[var] = self.decrypt(encrypted_val)
-                except Exception as e:
-                    logger.error(f"Error decrypting {var}: {str(e)}")
-        return decrypted
-
-def generate_encryption_key():
-    """Generate a secure encryption key"""
-    return Fernet.generate_key().decode()
+def configure_logger():
+    """Configure logging system"""
+    log_level = settings.SETTINGS["LOG_LEVEL"].upper()
+    log_dir = settings.LOG_DIR
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Create log filename with timestamp
+    log_file = os.path.join(
+        log_dir, 
+        f"trading_system_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    )
+    
+    # Configure logging
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+    
+    # Add colors for console output
+    logging.addLevelName(
+        logging.WARNING, 
+        f"\033[93m{logging.getLevelName(logging.WARNING)}\033[0m"
+    )
+    logging.addLevelName(
+        logging.ERROR, 
+        f"\033[91m{logging.getLevelName(logging.ERROR)}\033[0m"
+    )
+    logging.addLevelName(
+        logging.INFO, 
+        f"\033[94m{logging.getLevelName(logging.INFO)}\033[0m"
+    )
+    logging.addLevelName(
+        logging.DEBUG, 
+        f"\033[90m{logging.getLevelName(logging.DEBUG)}\033[0m"
+    )
+    
+    logging.info("Logger configured successfully")
